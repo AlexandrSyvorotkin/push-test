@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import './App.css'
 
 function showNotification(title: string, body: string) {
@@ -18,20 +18,22 @@ function showNotification(title: string, body: string) {
   }
 }
 
-function App() {
-  const [status, setStatus] = useState<'idle' | 'requesting' | 'granted' | 'denied'>('idle')
+function getInitialPermission(): 'idle' | 'requesting' | 'granted' | 'denied' {
+  if (typeof window !== 'undefined' && 'Notification' in window) {
+    const perm = Notification.permission
+    return perm === 'default' ? 'idle' : perm
+  }
+  return 'idle'
+}
 
-  useEffect(() => {
-    if ('Notification' in window && Notification.permission !== 'default') {
-      setStatus(Notification.permission)
-    }
-  }, [])
+function App() {
+  const [status, setStatus] = useState<'idle' | 'requesting' | 'granted' | 'denied'>(getInitialPermission)
 
   const requestPermission = () => {
     if (!('Notification' in window)) return
     setStatus('requesting')
     Notification.requestPermission().then((permission) => {
-      setStatus(permission)
+      setStatus(permission === 'default' ? 'idle' : permission)
     })
   }
 
