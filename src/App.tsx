@@ -59,17 +59,17 @@ function App() {
   return (
     <div className="app">
       <h1>Push Test</h1>
-      <p className="subtitle">Тест PWA и уведомлений на телефоне</p>
+      <p className="subtitle">push notification test</p>
 
       <div className="buttons">
         <button className="btn btn-now" onClick={sendNow}>
-          Уведомление сейчас
+          send notification now
         </button>
         <button
           className="btn btn-delayed"
-          onClick={() => setTimeout(sendDelayed, 2000)}
+          onClick={() => setTimeout(sendDelayed, 5000)}
         >
-          Уведомление через 2 сек
+          send notification in 5 seconds
         </button>
       </div>
 
