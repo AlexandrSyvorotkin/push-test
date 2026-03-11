@@ -83,6 +83,13 @@ h1 {
   border-color: #666;
 }
 
+.hint {
+  color: #888;
+  font-size: 0.85rem;
+  text-align: center;
+  margin: 0;
+}
+
 .status {
   color: #888;
   font-size: 0.9rem;

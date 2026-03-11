@@ -1,24 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 
-function showNotification(title: string, body: string) {
-  if (!('Notification' in window)) {
-    alert('Уведомления не поддерживаются в этом браузере')
-    return
-  }
-
-  if (Notification.permission === 'granted') {
-    new Notification(title, { body })
-  } else if (Notification.permission !== 'denied') {
-    Notification.requestPermission().then((permission) => {
-      if (permission === 'granted') {
-        new Notification(title, { body })
-      }
-    })
-  }
-}
-
-function getInitialPermission(): 'idle' | 'requesting' | 'granted' | 'denied' {
+function getInitialPermission(): 'idle' | 'granted' | 'denied' {
   if (typeof window !== 'undefined' && 'Notification' in window) {
     const perm = Notification.permission
     return perm === 'default' ? 'idle' : perm
@@ -26,23 +9,51 @@ function getInitialPermission(): 'idle' | 'requesting' | 'granted' | 'denied' {
   return 'idle'
 }
 
-function App() {
-  const [status, setStatus] = useState<'idle' | 'requesting' | 'granted' | 'denied'>(getInitialPermission)
+function showNotification(
+  title: string,
+  body: string,
+  onPermissionChange?: (granted: boolean) => void
+) {
+  if (!('Notification' in window)) {
+    alert('Уведомления не поддерживаются в этом браузере')
+    return
+  }
 
-  const requestPermission = () => {
-    if (!('Notification' in window)) return
-    setStatus('requesting')
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body })
+    onPermissionChange?.(true)
+  } else if (Notification.permission === 'denied') {
+    onPermissionChange?.(false)
+  } else {
     Notification.requestPermission().then((permission) => {
-      setStatus(permission === 'default' ? 'idle' : permission)
+      onPermissionChange?.(permission === 'granted')
+      if (permission === 'granted') {
+        new Notification(title, { body })
+      }
+    })
+  }
+}
+
+function App() {
+  const [status, setStatus] = useState<'idle' | 'granted' | 'denied'>(getInitialPermission)
+
+  const sendNow = () => {
+    showNotification('Сейчас!', 'Это уведомление показано сразу', (granted) => {
+      setStatus(granted ? 'granted' : 'denied')
     })
   }
 
-  const sendNow = () => {
-    showNotification('Сейчас!', 'Это уведомление показано сразу')
+  const sendDelayed = () => {
+    showNotification('Через 2 секунды', 'Это уведомление показано с задержкой', (granted) => {
+      setStatus(granted ? 'granted' : 'denied')
+    })
   }
 
-  const sendDelayed = () => {
-    showNotification('Через 2 секунды', 'Это уведомление показано с задержкой')
+  const requestPermission = () => {
+    if (!('Notification' in window)) return
+    Notification.requestPermission().then((permission) => {
+      setStatus(permission === 'default' ? 'idle' : permission)
+    })
   }
 
   return (
@@ -50,37 +61,29 @@ function App() {
       <h1>Push Test</h1>
       <p className="subtitle">Тест PWA и уведомлений на телефоне</p>
 
-      {status === 'idle' && (
-        <button className="btn btn-primary" onClick={requestPermission}>
-          Разрешить уведомления
+      <div className="buttons">
+        <button className="btn btn-now" onClick={sendNow}>
+          Уведомление сейчас
         </button>
-      )}
+        <button
+          className="btn btn-delayed"
+          onClick={() => setTimeout(sendDelayed, 2000)}
+        >
+          Уведомление через 2 сек
+        </button>
+      </div>
 
-      {status === 'requesting' && <p className="status">Ожидаем ответ...</p>}
-
-      {status === 'granted' && (
-        <div className="buttons">
-          <button className="btn btn-now" onClick={sendNow}>
-            Уведомление сейчас
-          </button>
-          <button
-            className="btn btn-delayed"
-            onClick={() => {
-              setTimeout(sendDelayed, 2000)
-            }}
-          >
-            Уведомление через 2 сек
-          </button>
-        </div>
+      {status === 'idle' && (
+        <p className="hint">При первом нажатии появится запрос разрешения</p>
       )}
 
       {status === 'denied' && (
         <p className="status denied">
-          Уведомления заблокированы. Разрешите их в настройках браузера.
+          Уведомления заблокированы. Разрешите в настройках браузера.
         </p>
       )}
 
-      {status !== 'idle' && status !== 'requesting' && (
+      {(status === 'denied' || status === 'granted') && (
         <button className="btn btn-secondary" onClick={requestPermission}>
           Изменить разрешение
         </button>
